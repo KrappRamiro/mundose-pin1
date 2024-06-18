@@ -1,1 +1,2 @@
-docker run --name test-web -p 8083:80 test-web
+#!/bin/sh
+docker run --name webapp -p 8083:80 webapp
