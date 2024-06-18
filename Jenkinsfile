@@ -11,7 +11,7 @@ pipeline {
 
             steps {
                     echo 'Building docker Image'
-                    sh 'docker build -t $NEXUS_DOCKER_REPO/webapp:latest .'
+                    sh 'docker build -t $NEXUS_DOCKER_REPO/webapp:latest -f webapp.Dockerfile .'
                 }
         }
 
@@ -30,7 +30,7 @@ pipeline {
         stage('Docker Push') {
             steps {
                 echo 'Pushing Image to docker hub'
-                sh 'docker push $NEXUS_DOCKER_REPO/test-web:latest'
+                sh 'docker push $NEXUS_DOCKER_REPO/webapp:latest'
             }
         }
     }
