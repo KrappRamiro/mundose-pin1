@@ -1,48 +1,36 @@
 pipeline {
     agent any
-
     environment {
-        DOCKER_IMAGE = 'my-app:latest' // Your Docker image name
-        DOCKER_REGISTRY_URL = 'http://localhost:8082'
-        NEXUS_CREDENTIALS_ID = 'nexus_creds'
-        DOCKERFILE_PATH = 'webapp.Dockerfile' // Path to your Dockerfile
+        NEXUS_CREDS = credentials('nexus_creds')
+        NEXUS_DOCKER_REPO = '127.0.0.1:8082'
     }
-
     stages {
-        stage('Checkout') {
+        stage('Building image') {
             steps {
-                // Checkout your source code
-                checkout scm
+                sh '''
+          docker build -t webapp -t $NEXUS_DOCKER_REPO/webapp:latest .
+          '''
             }
         }
-
-        stage('Build Docker Image') {
+        stage('Run tests') {
             steps {
-                script {
-                    // Build the Docker image specifying the Dockerfile
-                    docker.build(DOCKER_IMAGE, "-f ${DOCKERFILE_PATH} .")
-                }
+                sh "docker run webapp npm test"
             }
         }
-
-        stage('Push Docker Image to Nexus') {
+        stage('Docker Login') {
             steps {
+                echo 'Nexus Docker Repository Login'
                 script {
-                    // Log in to the Nexus Docker registry
-                    docker.withRegistry(DOCKER_REGISTRY_URL, NEXUS_CREDENTIALS_ID) {
-                        // Push the Docker image
-                        docker.image(DOCKER_IMAGE).push()
+                    withCredentials([usernamePassword(credentialsId: 'nexus_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        sh ' echo $PASS | docker login -u $USER --password-stdin $NEXUS_DOCKER_REPO'
                     }
                 }
             }
         }
-    }
-
-    post {
-        always {
-            // Clean up any Docker resources
-            script {
-                docker.image(DOCKER_IMAGE).remove()
+        stage('Docker Push') {
+            steps {
+                echo 'Pushing Image to docker hub'
+                sh 'docker push $NEXUS_DOCKER_REPO/webapp:latest'
             }
         }
     }
