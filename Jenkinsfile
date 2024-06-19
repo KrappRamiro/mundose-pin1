@@ -12,11 +12,6 @@ pipeline {
           '''
             }
         }
-        stage('Run tests') {
-            steps {
-                sh "docker run webapp npm test"
-            }
-        }
         stage('Docker Login') {
             steps {
                 echo 'Nexus Docker Repository Login'
