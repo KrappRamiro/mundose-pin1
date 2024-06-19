@@ -1,36 +1,48 @@
 pipeline {
     agent any
+
     environment {
-        NEXUS_CREDS = credentials('nexus_creds')
-        NEXUS_DOCKER_REPO = '127.0.0.1:8082'
+        DOCKER_IMAGE = 'my-app:latest' // Your Docker image name
+        DOCKER_REGISTRY_URL = 'http://localhost:8082'
+        NEXUS_CREDENTIALS_ID = 'nexus_creds'
+        DOCKERFILE_PATH = 'webapp.Dockerfile' // Path to your Dockerfile
     }
 
     stages {
-
-       stage('Docker Build') {
-
+        stage('Checkout') {
             steps {
-                    echo 'Building docker Image'
-                    sh 'docker build -t $NEXUS_DOCKER_REPO/webapp:latest -f webapp.Dockerfile .'
-                }
+                // Checkout your source code
+                checkout scm
+            }
         }
 
-       stage('Docker Login') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Nexus Docker Repository Login'
-                script{
-                    withCredentials([usernamePassword(credentialsId: 'nexus_creds', usernameVariable: 'USER', passwordVariable: 'PASS' )]){
-                       sh ' echo $PASS | docker login -u $USER --password-stdin $NEXUS_DOCKER_REPO'
-                    }
-
+                script {
+                    // Build the Docker image specifying the Dockerfile
+                    docker.build(DOCKER_IMAGE, "-f ${DOCKERFILE_PATH} .")
                 }
             }
         }
 
-        stage('Docker Push') {
+        stage('Push Docker Image to Nexus') {
             steps {
-                echo 'Pushing Image to docker hub'
-                sh 'docker push $NEXUS_DOCKER_REPO/webapp:latest'
+                script {
+                    // Log in to the Nexus Docker registry
+                    docker.withRegistry(DOCKER_REGISTRY_URL, NEXUS_CREDENTIALS_ID) {
+                        // Push the Docker image
+                        docker.image(DOCKER_IMAGE).push()
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up any Docker resources
+            script {
+                docker.image(DOCKER_IMAGE).remove()
             }
         }
     }
