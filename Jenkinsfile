@@ -8,7 +8,7 @@ pipeline {
         stage('Building image') {
             steps {
                 sh '''
-          docker build -t webapp -t $NEXUS_DOCKER_REPO/webapp:latest .
+          docker build -t webapp -t $NEXUS_DOCKER_REPO/webapp:latest -f webapp.Dockerfile .
           '''
             }
         }
