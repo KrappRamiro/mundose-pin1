@@ -17,7 +17,7 @@ pipeline {
                 echo 'Nexus Docker Repository Login'
                 script {
                     withCredentials([usernamePassword(credentialsId: 'nexus_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                        sh ' echo $PASS | docker login -u $USER --password-stdin $NEXUS_DOCKER_REPO'
+                        sh ' echo $PASS | docker login -u $USER --password-stdin $NEXUS_DOCKER_REPO --insecure-registry'
                     }
                 }
             }
@@ -25,7 +25,7 @@ pipeline {
         stage('Docker Push') {
             steps {
                 echo 'Pushing Image to docker hub'
-                sh 'docker push $NEXUS_DOCKER_REPO/webapp:latest'
+                sh 'docker push $NEXUS_DOCKER_REPO/webapp:latest --insecure-registry'
             }
         }
     }
